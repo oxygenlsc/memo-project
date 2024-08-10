@@ -1,20 +1,21 @@
+import text from '@ohos.graphics.text';
+
+import  CommonHeader  from './components/common-header'
+import  MemoList from  './components/memo-list'
+
+@Preview
 @Entry
 @Component
 struct Index {
   @State message: string = 'Hello World';
 
   build() {
-    RelativeContainer() {
-      Text(this.message)
-        .id('HelloWorld')
-        .fontSize(50)
-        .fontWeight(FontWeight.Bold)
-        .alignRules({
-          center: { anchor: '__container__', align: VerticalAlign.Center },
-          middle: { anchor: '__container__', align: HorizontalAlign.Center }
-        })
+    Column(){
+      CommonHeader()
+      MemoList()
     }
     .height('100%')
-    .width('100%')
+    .backgroundColor($r('app.color.bgColor'))
+    // .backgroundColor($('app.'))
   }
 }
