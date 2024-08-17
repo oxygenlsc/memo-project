@@ -21,9 +21,8 @@ export default struct CommonHeader {
          .margin({ top: '0.00vp', right: '20vp', bottom: '0.00vp', left: '0.00vp' })
      }
      .width('100.00%')
-     .height('5%')
+     .height(50)
      .justifyContent(FlexAlign.SpaceBetween)
      .margin({ top: '16.00vp', right: '0vp', bottom: '16.00vp', left: '0.00vp' })
-
    }
 }
