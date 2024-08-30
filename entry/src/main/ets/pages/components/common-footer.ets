@@ -13,7 +13,10 @@ export default  struct  CommonFooter {
           .width(25)
           .height(25)
       }
-      .height(50)
+      .padding({
+        bottom:10
+      })
+      .height(60)
       .onClick(()=>{
         router.pushUrl({
           url: 'pages/memoEdit'
