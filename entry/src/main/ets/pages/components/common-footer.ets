@@ -19,7 +19,8 @@ export default  struct  CommonFooter {
       .height(60)
       .onClick(()=>{
         router.pushUrl({
-          url: 'pages/memoEdit'
+          url: 'pages/memoEdit',
+          params: { id: -1}
         })
       })
     }

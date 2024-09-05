@@ -6,40 +6,27 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { promptAction } from '@kit.ArkUI';
 import { fileIo as fs } from '@kit.CoreFileKit';
-import { intl } from '@kit.LocalizationKit';
+import { relationalStore } from '@kit.ArkData';
+import { DataBaseUtil } from '../utils/dataBaseStore'
+import { DateUtil } from '../utils/DateUtil'
+
+const instance = DataBaseUtil.getStore()
 const photoSelectOptions = new photoAccessHelper.PhotoSelectOptions();
 const controller: RichEditorController = new RichEditorController();
 const options: RichEditorOptions = { controller: controller };
 let WindowWidth = 1
 let context = getContext(this) as common.Context;
-class DateUtil {
-  static getFormatTimeStr(timestamp: number) {
-    const date = new Date(timestamp);
-    let dateFormat3 = new intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    let formattedDate3 = dateFormat3.format(date);
-    return formattedDate3;
-  }
-  /* 获取当前时间戳 */
-  static getTimeStamp(): number {
-    const timeStamp = (new Date()).getTime();
-    return timeStamp;
-  }
-}
+
+
+
 @CustomDialog
 @Component
 struct FontCustomDialog {
   DialogController?: CustomDialogController
-  @Link titleX:number
-  @Link titleY:number
-  @Link titleW:number
-  @Link titleH:number
+  @Link titleX: number
+  @Link titleY: number
+  @Link titleW: number
+  @Link titleH: number
   @Link curTitleIndex: number
   @State multiplySelectCapsuleOptions: SegmentButtonOptions = SegmentButtonOptions.capsule({
     buttons: [{ text: 'B' }, { text: '斜体' }] as SegmentButtonItemTuple,
@@ -48,123 +35,212 @@ struct FontCustomDialog {
     fontSize: 18,
     selectedFontSize: 18
   })
-  @State TextSelectCapsuleOptions: SegmentButtonOptions =  SegmentButtonOptions.capsule({
-    buttons: [{ text: 'Normal' },{ text: '上划线' },{ text: '中划线' }, { text: '下划线' } ] as SegmentButtonItemTuple,
+  @State TextSelectCapsuleOptions: SegmentButtonOptions = SegmentButtonOptions.capsule({
+    buttons: [{ text: 'Normal' }, { text: '上划线' }, { text: '中划线' }, { text: '下划线' }] as SegmentButtonItemTuple,
     selectedBackgroundColor: '#89E33A',
     fontSize: 18,
     selectedFontSize: 18
   })
   @Link @Watch('onTextLineInfoChange') TextLineSelectCapsuleSelectedIndexes: number[]
   @Link @Watch('onInfoChange') multiplySelectCapsuleSelectedIndexes: number[]
-  @Link  richEditorTextStyle: RichEditorTextStyle
-  onInfoChange(){
-    let isBold = this.multiplySelectCapsuleSelectedIndexes.find(el=>el===0)
-    let isItalic = this.multiplySelectCapsuleSelectedIndexes.find(el=>el===1)
-    this.richEditorTextStyle.fontWeight = isBold===0? FontWeight.Bold : FontWeight.Normal
-    this.richEditorTextStyle.fontStyle = isItalic===1? FontStyle.Italic: FontStyle.Normal
+  @Link richEditorTextStyle: RichEditorTextStyle
+  @Link ColorTips: ResourceColor
+  @Link SliderValue: number
+  fontColorArr: ColorStop[] = [
+    {
+      color: '#000',
+      offset: 0.1
+    },
+    {
+      color: '#f8ac0c',
+      offset: 0.2
+    },
+    {
+      color: '#f44e14',
+      offset: 0.3
+    },
+    {
+      color: '#ec5c9a',
+      offset: 0.4
+    },
+    {
+      color: '#a354f1',
+      offset: 0.5
+    },
+    {
+      color: '#5d59f8',
+      offset: 0.6
+    },
+    {
+      color: '#2483f9',
+      offset: 0.7
+    },
+    {
+      color: '#61bae4',
+      offset: 0.8
+    },
+    {
+      color: '#7fd33d',
+      offset: 0.9
+    },
+    {
+      color: '#9c9ca6',
+      offset: 1
+    }
+  ]
 
-    // this.richEditorTextStyle.fontStyle = isUnderline? FontStyle.Italic: FontStyle.Normal
+  onInfoChange() {
+    let isBold = this.multiplySelectCapsuleSelectedIndexes.find(el => el === 0)
+    let isItalic = this.multiplySelectCapsuleSelectedIndexes.find(el => el === 1)
+    this.richEditorTextStyle.fontWeight = isBold === 0 ? FontWeight.Bold : FontWeight.Normal
+    this.richEditorTextStyle.fontStyle = isItalic === 1 ? FontStyle.Italic : FontStyle.Normal
     controller.setTypingStyle(this.richEditorTextStyle)
   }
+
   onTextLineInfoChange() {
-    let isTopLine = this.TextLineSelectCapsuleSelectedIndexes.find(el=>el===1)
-    let isMiddleLine = this.TextLineSelectCapsuleSelectedIndexes.find(el=>el===2)
-    let isUnderline = this.TextLineSelectCapsuleSelectedIndexes.find(el=>el===3)
-    if(isTopLine===1) {
+    let isTopLine = this.TextLineSelectCapsuleSelectedIndexes.find(el => el === 1)
+    let isMiddleLine = this.TextLineSelectCapsuleSelectedIndexes.find(el => el === 2)
+    let isUnderline = this.TextLineSelectCapsuleSelectedIndexes.find(el => el === 3)
+    if (isTopLine === 1) {
       this.richEditorTextStyle.decoration = {
-        type:TextDecorationType.Overline,
+        type: TextDecorationType.Overline,
       }
-    }else if(isMiddleLine===2) {
+    } else if (isMiddleLine === 2) {
       this.richEditorTextStyle.decoration = {
-        type:TextDecorationType.LineThrough,
+        type: TextDecorationType.LineThrough,
       }
-    }else  if(isUnderline===3) {
+    } else if (isUnderline === 3) {
       this.richEditorTextStyle.decoration = {
-        type:TextDecorationType.Underline,
+        type: TextDecorationType.Underline,
       }
-    }else {
+    } else {
       this.richEditorTextStyle.decoration = {
-        type:TextDecorationType.None,
+        type: TextDecorationType.None,
       }
     }
     controller.setTypingStyle(this.richEditorTextStyle)
   }
-  HandleClickTitle = (e:ClickEvent, i:number, size:number)=>{
+
+  HandleClickTitle = (e: ClickEvent, i: number, size: number) => {
     this.titleX = Number(e.target.area.position.x)
-    this.titleY= Number(e.target.area.position.y)
+    this.titleY = Number(e.target.area.position.y)
     this.titleW = Number(e.target.area.width)
     this.titleH = Number(e.target.area.height)
     this.curTitleIndex = i
     this.richEditorTextStyle.fontSize = size
-    if(i===4){
+    if (i === 4) {
       this.richEditorTextStyle.fontWeight = FontWeight.Normal
-      this.multiplySelectCapsuleSelectedIndexes = this.multiplySelectCapsuleSelectedIndexes.filter(el=>{
-        return el!==0
+      this.multiplySelectCapsuleSelectedIndexes = this.multiplySelectCapsuleSelectedIndexes.filter(el => {
+        return el !== 0
       })
-    }else {
+    } else {
       this.richEditorTextStyle.fontWeight = FontWeight.Bold
-      this.multiplySelectCapsuleSelectedIndexes = Array.from(new Set([0,...this.multiplySelectCapsuleSelectedIndexes]))
+      this.multiplySelectCapsuleSelectedIndexes = Array.from(new Set([0, ...this.multiplySelectCapsuleSelectedIndexes]))
     }
     controller.setTypingStyle(this.richEditorTextStyle)
   }
+
   build() {
     Column() {
-     Row(){
-       Text('格式')
-         .fontWeight(FontWeight.Bold)
-       Image($r('app.media.close'))
-         .width(26)
-         .height(26)
-         .onClick(()=>{
-           this.DialogController?.close()
-         })
-     }
-     .width('100%')
-     .justifyContent(FlexAlign.SpaceBetween)
-     Row(){
-       Text('')
-         .width(this.titleW+8)
-         .height(this.titleH+8)
-         .backgroundColor($r('app.color.baseColor'))
-         .position({
-           y:this.titleY-5,
-           x:this.titleX-4
-         })
-         .borderRadius(4)
-         .animation({
-           duration: 200,
-           curve: Curve.EaseInOut,
-           iterations: 1, // 设置-1表示动画无限循环
-           playMode: PlayMode.Normal,
-           expectedFrameRateRange: {
-             min: 20,
-             max: 120,
-             expected: 90,
-           }
-         })
-       Text('标题').fontSize(26).fontWeight(FontWeight.Bold).lineHeight(26).fontColor(`${this.curTitleIndex===1? '#fff':'#000'}`).onClick((e)=>this.HandleClickTitle(e,1,26))
-       Text('小标题').fontSize(22).fontWeight(FontWeight.Bold).lineHeight(22).fontColor(`${this.curTitleIndex===2? '#fff':'#000'}`).onClick((e)=>this.HandleClickTitle(e,2,22))
-       Text('副标题').fontSize(18).fontWeight(FontWeight.Bold).lineHeight(18).fontColor(`${this.curTitleIndex===3? '#fff':'#000'}`).onClick((e)=>this.HandleClickTitle(e,3,18))
-       Text('正文').fontSize(16).fontWeight(FontWeight.Normal).lineHeight(16).fontColor(`${this.curTitleIndex===4? '#fff':'#000'}`).onClick((e)=>this.HandleClickTitle(e,4, 16))
-     }
-     .width('100%')
-     .margin({
-       top:16
-     })
-     .justifyContent(FlexAlign.SpaceAround)
+      Row() {
+        Text('格式')
+          .fontWeight(FontWeight.Bold)
+        Image($r('app.media.close'))
+          .width(26)
+          .height(26)
+          .onClick(() => {
+            this.DialogController?.close()
+          })
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceBetween)
+
+      Row() {
+        Text('')
+          .width(this.titleW + 8)
+          .height(this.titleH + 8)
+          .backgroundColor($r('app.color.baseColor'))
+          .position({
+            y: this.titleY - 5,
+            x: this.titleX - 4
+          })
+          .borderRadius(4)
+          .animation({
+            duration: 200,
+            curve: Curve.EaseInOut,
+            iterations: 1, // 设置-1表示动画无限循环
+            playMode: PlayMode.Normal,
+            expectedFrameRateRange: {
+              min: 20,
+              max: 120,
+              expected: 90,
+            }
+          })
+        Text('标题')
+          .fontSize(26)
+          .fontWeight(FontWeight.Bold)
+          .lineHeight(26)
+          .fontColor(`${this.curTitleIndex === 1 ? '#fff' : '#000'}`)
+          .onClick((e) => this.HandleClickTitle(e, 1, 26))
+        Text('小标题')
+          .fontSize(22)
+          .fontWeight(FontWeight.Bold)
+          .lineHeight(22)
+          .fontColor(`${this.curTitleIndex === 2 ? '#fff' : '#000'}`)
+          .onClick((e) => this.HandleClickTitle(e, 2, 22))
+        Text('副标题')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .lineHeight(18)
+          .fontColor(`${this.curTitleIndex === 3 ? '#fff' : '#000'}`)
+          .onClick((e) => this.HandleClickTitle(e, 3, 18))
+        Text('正文')
+          .fontSize(16)
+          .fontWeight(FontWeight.Normal)
+          .lineHeight(16)
+          .fontColor(`${this.curTitleIndex === 4 ? '#fff' : '#000'}`)
+          .onClick((e) => this.HandleClickTitle(e, 4, 16))
+      }
+      .width('100%')
+      .margin({
+        top: 16
+      })
+      .justifyContent(FlexAlign.SpaceAround)
+
       SegmentButton({
         options: this.TextSelectCapsuleOptions,
-        selectedIndexes: $TextLineSelectCapsuleSelectedIndexes })
+        selectedIndexes: $TextLineSelectCapsuleSelectedIndexes
+      })
         .margin(12)
         .borderRadius(6)
       SegmentButton({
         options: this.multiplySelectCapsuleOptions,
-        selectedIndexes: $multiplySelectCapsuleSelectedIndexes })
+        selectedIndexes: $multiplySelectCapsuleSelectedIndexes
+      })
         .margin(12)
         .borderRadius(6)
+      Slider({ style: SliderStyle.OutSet, value: this.SliderValue })
+        .selectedColor('transparent')
+        .trackThickness(10)
+        .trackColor(new LinearGradient(this.fontColorArr))
+        .blockSize({ width: '100px', height: '100px' })
+        .blockColor(this.ColorTips)
+        .blockStyle({ type: SliderBlockType.SHAPE, shape: new Path({ commands: 'M60 60 M30 30 L15 56 L45 56 Z' }) })
+        .onChange(async (value) => {
+          this.SliderValue = value
+          const index = Math.floor(value / 10)
+          const curColorInfo = this.fontColorArr[index]
+          this.ColorTips = curColorInfo.color
+          this.richEditorTextStyle.fontColor = curColorInfo.color
+          controller.setTypingStyle(this.richEditorTextStyle)
+        })
     }
     .padding(16)
   }
+}
+
+interface queryInterface {
+  id: number;
 }
 
 @Entry
@@ -172,23 +248,21 @@ struct FontCustomDialog {
 struct MemoEdit {
   private start: number = -1;
   private end: number = -1;
-  @State message: string = "[-1, -1]"
-  @State content: string = ""
   @State scrollHeight: number = 0;
   @State keyHeight: number = 0;
   @State context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
   @State filesDir: string = this.context.filesDir;
-
-  @State titleX:number = 0
-  @State titleY:number = 0
-  @State titleW:number = 0
-  @State titleH:number = 0
+  @State titleX: number = 0
+  @State titleY: number = 0
+  @State titleW: number = 0
+  @State titleH: number = 0
   @State curTitleIndex: number = 0
-  @State  multiplySelectCapsuleSelectedIndexes:number[] = []
-  @State  TextLineSelectCapsuleSelectedIndexes:number[] = [0]
-
-
+  @State multiplySelectCapsuleSelectedIndexes: number[] = []
+  @State TextLineSelectCapsuleSelectedIndexes: number[] = [0]
   @State richEditorTextStyle: RichEditorTextStyle = {}
+  @State ColorTips: ResourceColor = '#000'
+  @State SliderValue: number = 0
+  queryId: number = -1
   dialogControllerTwo: CustomDialogController | null = new CustomDialogController({
     builder: FontCustomDialog({
       titleX: $titleX,
@@ -198,10 +272,12 @@ struct MemoEdit {
       curTitleIndex: $curTitleIndex,
       multiplySelectCapsuleSelectedIndexes: $multiplySelectCapsuleSelectedIndexes,
       richEditorTextStyle: $richEditorTextStyle,
-      TextLineSelectCapsuleSelectedIndexes: $TextLineSelectCapsuleSelectedIndexes
+      TextLineSelectCapsuleSelectedIndexes: $TextLineSelectCapsuleSelectedIndexes,
+      ColorTips: $ColorTips,
+      SliderValue: $SliderValue
     }),
     alignment: DialogAlignment.Bottom,
-    onWillDismiss:(dismissDialogAction: DismissDialogAction)=> {
+    onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
       console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
       console.log("dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
@@ -213,13 +289,12 @@ struct MemoEdit {
     },
     offset: { dx: 0, dy: 0 },
     cornerRadius: 8,
-
-
   })
 
-
-
   async aboutToAppear() {
+    const params = router.getParams() as (queryInterface)
+    this.queryId = params.id
+    this.initMemoData()
     window.getLastWindow(getContext(this)).then(currentWindow => {
       // 设置窗口的布局为沉浸式布局
       currentWindow.setWindowLayoutFullScreen(true);
@@ -240,12 +315,57 @@ struct MemoEdit {
       })
     })
   }
-  async saveBufferToFileManager(imgBuffer:ArrayBuffer, targetUrl:string) {
+
+  async initMemoData() {
+    if(instance && instance.Store) {
+      let predicates = new relationalStore.RdbPredicates("MEMO");
+      predicates.equalTo("ID",6);
+      const resultSet =  await instance.Store.query(predicates)
+      while (resultSet.goToNextRow()) {
+        const content = resultSet.getString(resultSet.getColumnIndex("CONTENT"));
+        const memoData:  Array<RichEditorImageSpanResult| RichEditorTextSpanResult> = JSON.parse(content)
+        memoData.forEach((item)=>{
+          console.log(JSON.stringify(item))
+          if(typeof(item as RichEditorImageSpanResult)['imageStyle'] != 'undefined'){
+             const imgSrc =  (item as RichEditorImageSpanResult).valueResourceStr;
+             const imageStyle = (item as RichEditorImageSpanResult).imageStyle
+            imageStyle.size = [px2vp(imageStyle.size[0]),px2vp(imageStyle.size[1])]
+             const offset = (item as RichEditorImageSpanResult).spanPosition.spanIndex
+            controller.addImageSpan(imgSrc, {
+              imageStyle,
+              // offset,
+            })
+          } else {
+            const value =  (item as RichEditorTextSpanResult).value
+            const style = (item as RichEditorTextSpanResult).textStyle
+            const offset = (item as RichEditorImageSpanResult).spanPosition.spanIndex
+
+            controller.addTextSpan(value,
+              {
+                style,
+                // offset
+              }
+            )
+            // if(typeof(item as RichEditorTextSpanResult)['symbolSpanStyle'] != 'undefined') {
+            //   this.content += (item as RichEditorTextSpanResult).symbolSpanStyle?.fontSize;
+            //   this.content += "\n"
+            // }else {
+            //   this.content += (item as RichEditorTextSpanResult).value;
+            //   this.content += "\n"
+            }
+        })
+      }
+    // 释放数据集的内存，若不释放可能会引起fd泄露与内存泄露
+    resultSet.close();
+    }
+  }
+  async saveBufferToFileManager(imgBuffer: ArrayBuffer, targetUrl: string) {
     const file = fs.openSync(targetUrl,
       fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     await fs.write(file.fd, imgBuffer);
     await fs.close(file.fd);
   }
+
   // 获取图片uri
   private async getImgUris(): Promise<Array<string>> {
     let uris: Array<string> = [];
@@ -261,8 +381,6 @@ struct MemoEdit {
     return uris
   }
 
-
-
   private async takePicture() {
     const uris = await this.getImgUris()
     uris.forEach((async (el) => {
@@ -273,13 +391,13 @@ struct MemoEdit {
       fs.readSync(file.fd, buffer);
       fs.closeSync(file);
       const targetUrl = this.filesDir + `/${DateUtil.getTimeStamp()}.png`
-      console.log(targetUrl,'targetUrl')
+      console.log(targetUrl, 'targetUrl')
       await this.saveBufferToFileManager(buffer, targetUrl)
       let imageSource = image.createImageSource(buffer.slice(0, buffer.byteLength))
       const info = await imageSource.getImageInfo()
-      let createPixelMap: image.PixelMap = await imageSource.createPixelMap({
-        desiredPixelFormat: image.PixelMapFormat.RGBA_8888
-      })
+      // let createPixelMap: image.PixelMap = await imageSource.createPixelMap({
+      //   desiredPixelFormat: image.PixelMapFormat.RGBA_8888
+      // })
       await imageSource.release()
       controller.addImageSpan(`file://${targetUrl}`, {
         imageStyle: {
@@ -302,11 +420,11 @@ struct MemoEdit {
 
   build() {
     Column() {
-      Row(){
+      Row() {
         Image($r('app.media.back'))
           .width(30)
           .height(20)
-          .onClick(()=>{
+          .onClick(() => {
             router.back()
           })
         Text('完成')
@@ -315,20 +433,61 @@ struct MemoEdit {
           .width(40)
           .height(20)
           .onClick(async (e) => {
-            console.log('123')
-           const submitData = await  controller.getSpans({
-              start: this.start,
-              end: this.end
-            })
-            controller.stopEditing()
-            console.log(JSON.stringify(submitData))
+            if(this.queryId === -1) {
+              try {
+                if (instance) {
+                  const submitData = await controller.getSpans({
+                    start: this.start,
+                    end: this.end
+                  })
+                  controller.stopEditing()
+                  DateUtil.getTimeStamp()
+                  const id = await instance.Store?.insert('MEMO', {
+                    CREATE_DATE: DateUtil.getTimeStamp(),
+                    CONTENT: JSON.stringify(submitData),
+                    IS_DEL: 0,
+                  }
+                  )
+                  this.queryId = id || -1
+                  console.log(id+'id')
+
+                }
+              } catch (e) {
+                console.log(e)
+              }
+            }
+            else  {
+              try {
+                if(instance) {
+                  const submitData = await controller.getSpans({
+                    start: this.start,
+                    end: this.end
+                  })
+                  controller.stopEditing()
+                  let predicates = new relationalStore.RdbPredicates("MEMO");
+                  predicates.equalTo("ID", this.queryId);
+                  (instance.Store as relationalStore.RdbStore).update({
+                    'CONTENT': JSON.stringify(submitData),
+                  }, predicates, relationalStore.ConflictResolution.ON_CONFLICT_REPLACE, (err, rows) => {
+                    if (err) {
+                      console.error(`Updated failed, code is ${err.code},message is ${err.message}`);
+                      return;
+                    }
+                    console.info(`Updated row count: ${rows}`);
+                  })
+                }
+              } catch (e) {
+                console.log(e)
+              }
+
+            }
           })
       }
       .width('100%')
       .justifyContent(FlexAlign.SpaceBetween)
       .alignItems(VerticalAlign.Center)
       .height(30)
-      .padding({ left: 8,right:10 })
+      .padding({ left: 8, right: 10 })
       .zIndex(10)
 
       RichEditor(options)
@@ -343,7 +502,7 @@ struct MemoEdit {
           .margin({ right: 16 })
           .fontSize(18)
           .fontColor('#ff707070')
-          .onClick(()=>{
+          .onClick(() => {
             if (this.dialogControllerTwo != null) {
               this.dialogControllerTwo.open()
             }
