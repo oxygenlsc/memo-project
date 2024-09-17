@@ -3,11 +3,12 @@ import router from '@ohos.router';
 
 @Component
 export default  struct  CommonFooter {
+  @Prop ListTotal:number
   build() {
     Column(){
       Divider()
       Row(){
-        Text('144个备忘录')
+        Text(`${this.ListTotal}个备忘录`)
           .fontSize(14)
         Image($r('app.media.edit'))
           .width(25)

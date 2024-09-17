@@ -277,16 +277,6 @@ struct MemoEdit {
       SliderValue: $SliderValue
     }),
     alignment: DialogAlignment.Bottom,
-    onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
-      if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
-        dismissDialogAction.dismiss()
-      }
-      if (dismissDialogAction.reason == DismissReason.TOUCH_OUTSIDE) {
-        dismissDialogAction.dismiss()
-      }
-    },
     offset: { dx: 0, dy: 0 },
     cornerRadius: 8,
   })
@@ -319,39 +309,34 @@ struct MemoEdit {
   async initMemoData() {
     if(instance && instance.Store) {
       let predicates = new relationalStore.RdbPredicates("MEMO");
-      predicates.equalTo("ID",6);
+      predicates.equalTo("ID",this.queryId);
       const resultSet =  await instance.Store.query(predicates)
       while (resultSet.goToNextRow()) {
+
         const content = resultSet.getString(resultSet.getColumnIndex("CONTENT"));
         const memoData:  Array<RichEditorImageSpanResult| RichEditorTextSpanResult> = JSON.parse(content)
         memoData.forEach((item)=>{
-          console.log(JSON.stringify(item))
+          console.dir(item)
+          console.log('item')
           if(typeof(item as RichEditorImageSpanResult)['imageStyle'] != 'undefined'){
              const imgSrc =  (item as RichEditorImageSpanResult).valueResourceStr;
              const imageStyle = (item as RichEditorImageSpanResult).imageStyle
             imageStyle.size = [px2vp(imageStyle.size[0]),px2vp(imageStyle.size[1])]
-             const offset = (item as RichEditorImageSpanResult).spanPosition.spanIndex
             controller.addImageSpan(imgSrc, {
               imageStyle,
-              // offset,
             })
           } else {
             const value =  (item as RichEditorTextSpanResult).value
             const style = (item as RichEditorTextSpanResult).textStyle
-            const offset = (item as RichEditorImageSpanResult).spanPosition.spanIndex
-
+            // richEditor中 获取的和设置的字体粗细是要转换的 有规则的
+            // 参考 https://developer.huawei.com/consumer/cn/doc/harmonyos-references-V5/ts-basic-components-richeditor-V5#richeditortextstyleresult
+            const fontWeight = style.fontWeight === 9? FontWeight.Bold: FontWeight.Normal
+            style.fontWeight = fontWeight
             controller.addTextSpan(value,
               {
                 style,
-                // offset
               }
             )
-            // if(typeof(item as RichEditorTextSpanResult)['symbolSpanStyle'] != 'undefined') {
-            //   this.content += (item as RichEditorTextSpanResult).symbolSpanStyle?.fontSize;
-            //   this.content += "\n"
-            // }else {
-            //   this.content += (item as RichEditorTextSpanResult).value;
-            //   this.content += "\n"
             }
         })
       }
@@ -432,6 +417,7 @@ struct MemoEdit {
           .fontColor($r('app.color.baseColor'))
           .width(40)
           .height(20)
+          .visibility(this.keyHeight === 0 ? Visibility.Hidden : Visibility.Visible)
           .onClick(async (e) => {
             if(this.queryId === -1) {
               try {
@@ -440,12 +426,14 @@ struct MemoEdit {
                     start: this.start,
                     end: this.end
                   })
+
+
                   controller.stopEditing()
-                  DateUtil.getTimeStamp()
                   const id = await instance.Store?.insert('MEMO', {
                     CREATE_DATE: DateUtil.getTimeStamp(),
                     CONTENT: JSON.stringify(submitData),
                     IS_DEL: 0,
+                    IS_UP:0
                   }
                   )
                   this.queryId = id || -1
@@ -463,6 +451,8 @@ struct MemoEdit {
                     start: this.start,
                     end: this.end
                   })
+                  console.dir(submitData)
+                  console.log('submitData')
                   controller.stopEditing()
                   let predicates = new relationalStore.RdbPredicates("MEMO");
                   predicates.equalTo("ID", this.queryId);
@@ -515,25 +505,24 @@ struct MemoEdit {
           .onClick(() => {
             this.takePicture()
           })
-        Image($r('app.media.camera'))
-          .width(26)
-          .height(26)
-          .onClick(async () => {
-            promptAction.showToast({ message: '待开发需要在真机上调试' })
-            try {
-              let pickerProfile: cameraPicker.PickerProfile = {
-                cameraPosition: camera.CameraPosition.CAMERA_POSITION_BACK
-              };
-              let pickerResult: cameraPicker.PickerResult = await cameraPicker.pick(context,
-                [cameraPicker.PickerMediaType.PHOTO], pickerProfile);
-              console.log("the pick pickerResult is:" + JSON.stringify(pickerResult));
-            } catch (error) {
-              let err = error as BusinessError;
-              console.error(`the pick call failed. error code: ${err.code}`);
-            }
-          })
+        // Image($r('app.media.camera'))
+        //   .width(26)
+        //   .height(26)
+        //   .onClick(async () => {
+        //     promptAction.showToast({ message: '待开发需要在真机上调试' })
+        //     try {
+        //       let pickerProfile: cameraPicker.PickerProfile = {
+        //         cameraPosition: camera.CameraPosition.CAMERA_POSITION_BACK
+        //       };
+        //       let pickerResult: cameraPicker.PickerResult = await cameraPicker.pick(context,
+        //         [cameraPicker.PickerMediaType.PHOTO], pickerProfile);
+        //       console.log("the pick pickerResult is:" + JSON.stringify(pickerResult));
+        //     } catch (error) {
+        //       let err = error as BusinessError;
+        //       console.error(`the pick call failed. error code: ${err.code}`);
+        //     }
+        //   })
 
-        // Button('打印保存当前数据')
       }
       .justifyContent(FlexAlign.End)
       .height(50)

@@ -6,11 +6,11 @@
     },
     {
       "name": "EntryAbility_desc",
-      "value": "description"
+      "value": "easy_memo"
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "easy_memo"
     }
   ]
 }
